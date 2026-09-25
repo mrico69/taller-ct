@@ -477,6 +477,13 @@ function rechazarManual(id){const c=prompt('Comentario del cliente al rechazar:'
 function finalizar(id){if(confirm('Marcar el trabajo como FINALIZADO? Pasa a administración para facturar.'))marcar(id,'finalizado');}
 function facturar(id){if(confirm('Marcar como FACTURADO?'))marcar(id,'facturado');}
 function cobrar(id){if(confirm('Marcar como COBRADO? Cierra el trabajo.'))marcar(id,'cobrado');}
+function borrarOrden(id){
+  const o=ordenes.find(x=>x.id===id);if(!o)return;
+  if(!confirm('¿Borrar la OT '+(o.nro?'N° '+o.nro:'(sin N°)')+' de '+o.clienteNombre+'? No se puede deshacer.'))return;
+  const p=[db.collection('ordenes').doc(id).delete()];
+  if(o.aprobToken)p.push(db.collection('aprobaciones').doc(o.aprobToken).delete().catch(()=>{}));
+  Promise.all(p).catch(e=>alert('Error al borrar: '+e.message));
+}
 
 /* ---------- pendientes por rol ---------- */
 function renderPendientes(){
@@ -521,6 +528,7 @@ function tarjeta(o,conAcciones){
   }else{
     acc='<button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button>';
   }
+  if(yo.rol==='gerente')acc+=' <button class="btn mini del" onclick="borrarOrden(\''+o.id+'\')">Borrar</button>';
   const com=o.clienteComentario?'<div class="meta">💬 Cliente: '+o.clienteComentario+'</div>':"";
   return '<div class="trab"><div class="top"><div><span class="nro">'+(o.nro?'OT N° '+o.nro:'(sin N°)')+'</span> · '+o.clienteNombre+
     '<div class="meta">'+(o.vehiculo||'')+' '+(o.dominio||'')+' · recibido '+fFechaHora(o.recibidoEn)+'</div>'+
