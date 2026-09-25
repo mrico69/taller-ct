@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>Taller CT Logística — Gestión</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+:root{
+  --agua:#0E5C63;--agua2:#0A464C;--ink:#12263A;--sol:#E8B100;
+  --stone:#EEF2F3;--surface:#fff;--line:#D3DDDF;--muted:#6B7683;
+  --ok:#0E7A4D;--warn:#B26A00;--danger:#B23B3B;--chip:#e7edee;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
+  background:var(--stone);color:var(--ink);font-size:15px;line-height:1.45;padding-bottom:40px}
+header{background:linear-gradient(160deg,var(--agua),var(--agua2));color:#fff;padding:12px 16px;
+  display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:20}
+header h1{font-size:16px;margin:0;font-weight:700}
+header .who{margin-left:auto;font-size:12px;opacity:.9;text-align:right}
+header .who b{display:block;font-size:13px}
+nav{display:flex;background:var(--agua2);position:sticky;top:48px;z-index:19;overflow-x:auto}
+nav button{background:none;border:none;color:#cfe0e2;padding:11px 14px;font-size:13px;font-weight:600;
+  cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap}
+nav button.on{color:#fff;border-bottom-color:var(--sol);background:rgba(255,255,255,.08)}
+main{padding:14px;max-width:860px;margin:0 auto}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+h2{font-size:16px;color:var(--agua);margin:0 0 12px}
+h3{font-size:14px;margin:16px 0 8px;color:var(--ink)}
+label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin:10px 0 3px}
+input,select,textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:7px;font-size:15px;
+  font-family:inherit;background:#fff;color:var(--ink)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--agua)}
+textarea{resize:vertical;min-height:54px}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row>div{flex:1;min-width:120px}
+.btn{background:var(--agua);color:#fff;border:none;border-radius:7px;padding:11px 16px;font-size:15px;
+  font-weight:600;cursor:pointer}
+.btn:active{opacity:.85}
+.btn.sec{background:#fff;color:var(--agua);border:1px solid var(--agua)}
+.btn.sol{background:var(--sol);color:#3a2e00}
+.btn.ok{background:var(--ok)}.btn.warn{background:var(--warn)}.btn.del{background:#fff;color:var(--danger);border:1px solid var(--danger)}
+.btn.mini{padding:7px 11px;font-size:13px}
+.btn.full{width:100%;margin-top:14px}
+.btn:disabled{opacity:.5;cursor:default}
+.item{display:flex;gap:6px;align-items:flex-start;margin-bottom:8px;flex-wrap:wrap}
+.item .desc{flex:2;min-width:150px}.item .uni{width:96px}.item .cant{width:70px}.item .pu{width:100px}
+.item .tot{width:100px;padding-top:10px;font-weight:600;text-align:right;color:var(--agua)}
+.item .x{background:#fff;color:var(--danger);border:1px solid var(--danger);border-radius:7px;width:38px;height:40px;font-size:18px;cursor:pointer}
+.total{display:flex;justify-content:space-between;background:var(--chip);border-radius:8px;padding:12px 14px;
+  margin-top:12px;font-weight:700;color:var(--agua);font-size:18px}
+.msg{padding:10px 12px;border-radius:7px;margin-bottom:12px;font-size:14px;display:none}
+.msg.ok{background:#e5f3ec;color:var(--ok);display:block}.msg.err{background:#f7e7e7;color:var(--danger);display:block}
+.trab{border:1px solid var(--line);border-radius:9px;padding:12px;margin-bottom:10px;background:#fff}
+.trab .top{display:flex;justify-content:space-between;gap:8px;align-items:flex-start}
+.trab .nro{font-weight:700;color:var(--agua)}
+.trab .meta{font-size:12px;color:var(--muted);margin-top:2px}
+.trab .acc{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.badge{display:inline-block;padding:2px 9px;border-radius:11px;font-size:11px;font-weight:700;color:#fff}
+.b-recibido{background:var(--muted)}.b-presupuestado{background:#3a6ea5}.b-aprobado{background:var(--ok)}
+.b-rechazado{background:var(--danger)}.b-finalizado{background:#5b4b9a}.b-facturado{background:var(--warn)}.b-cobrado{background:#2b7a2b}
+.chip{display:inline-block;background:var(--chip);border-radius:12px;padding:3px 10px;font-size:13px;margin:0 6px 6px 0}
+.chip button{background:none;border:none;color:var(--danger);cursor:pointer;margin-left:5px}
+.filtros{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.filtros input,.filtros select{width:auto;flex:1;min-width:120px}
+.vacio{text-align:center;color:var(--muted);padding:28px 10px}
+.gate{max-width:360px;margin:60px auto;padding:24px}
+.gate h1{color:var(--agua);text-align:center;font-size:22px;margin:0 0 4px}
+.gate p{text-align:center;color:var(--muted);margin:0 0 20px;font-size:13px}
+.aprob{max-width:600px;margin:24px auto;padding:0 14px}
+.aprob .doc{background:#fff;border:1px solid var(--line);border-radius:10px;padding:18px}
+table.mini{width:100%;border-collapse:collapse;font-size:13px;margin-top:8px}
+table.mini th,table.mini td{border:1px solid var(--line);padding:6px 8px;text-align:right}
+table.mini th{background:var(--agua);color:#fff;text-align:center;font-size:11px}
+table.mini td.l{text-align:left}
+.hidden{display:none!important}
+small.hint{color:var(--muted);font-size:12px}
+</style>
+</head>
+<body>
+
+<!-- ===== Aviso config ===== -->
+<div id="aviso-config" class="gate hidden">
+  <div class="card" style="background:#fff3cd;border-color:#e0c97f;color:#664d03">
+    <b>Falta conectar Firebase.</b> Pegá la config del proyecto en el bloque <code>firebaseConfig</code> del archivo.
+  </div>
+</div>
+
+<!-- ===== Login ===== -->
+<div id="gate-login" class="gate hidden">
+  <div class="card">
+    <h1>Taller CT Logística</h1>
+    <p>Ingresá con tu usuario</p>
+    <div id="msg-login" class="msg"></div>
+    <label>Email</label><input id="l-email" type="email" autocomplete="username">
+    <label>Contraseña</label><input id="l-pass" type="password" autocomplete="current-password">
+    <button class="btn full" onclick="login()">Ingresar</button>
+  </div>
+</div>
+
+<!-- ===== App ===== -->
+<div id="app" class="hidden">
+  <header>
+    <h1>Taller CT Logística</h1>
+    <div class="who"><b id="u-nombre">—</b><span id="u-rol">—</span> · <a href="#" onclick="logout();return false" style="color:#fff;text-decoration:underline">salir</a></div>
+  </header>
+  <nav id="nav"></nav>
+  <main>
+    <!-- PENDIENTES -->
+    <section id="v-pendientes" class="vista">
+      <div class="card"><h2>Pendientes</h2><div id="pendientes"></div></div>
+    </section>
+
+    <!-- RECIBIR -->
+    <section id="v-recibir" class="vista hidden">
+      <div class="card">
+        <h2 id="rec-titulo">Recibir vehículo</h2>
+        <div id="msg-rec" class="msg"></div>
+        <input type="hidden" id="rec-id">
+        <label>Cliente</label>
+        <div class="row"><div style="flex:3"><select id="rec-cliente"></select></div>
+          <div style="flex:0"><button class="btn sec mini" style="margin-top:0;height:42px" onclick="showView('clientes')">+ Cliente</button></div></div>
+        <div class="row">
+          <div><label>Vehículo</label><input id="rec-vehiculo" placeholder="Scania / Mercedes 1620…"></div>
+          <div><label>Dominio (patente)</label><input id="rec-dominio" placeholder="OLD467"></div>
+        </div>
+        <label>Problemas que manifiesta el cliente</label>
+        <textarea id="rec-observado" placeholder="Lo que el cliente reporta…"></textarea>
+        <button class="btn full" onclick="guardarRecepcion()">Registrar recepción</button>
+        <small class="hint">Se guarda con fecha y hora, y podés generar el PDF / enviar por WhatsApp desde Pendientes.</small>
+      </div>
+    </section>
+
+    <!-- OT -->
+    <section id="v-ot" class="vista hidden">
+      <div class="card">
+        <h2 id="ot-titulo">Orden de trabajo / Presupuesto</h2>
+        <div id="msg-ot" class="msg"></div>
+        <input type="hidden" id="ot-id">
+        <div class="row">
+          <div><label>N° de OT</label><input id="ot-nro" inputmode="numeric"></div>
+          <div><label>Fecha</label><input id="ot-fecha" type="date"></div>
+        </div>
+        <div id="ot-datos" class="chip"></div>
+        <h3>Ítems del presupuesto</h3>
+        <div id="ot-items"></div>
+        <button class="btn sec mini" onclick="addItem()">+ Agregar ítem</button>
+        <div class="total"><span>TOTAL</span><span id="ot-total">$0</span></div>
+        <button class="btn full" onclick="guardarOT()">Guardar y generar presupuesto</button>
+        <small class="hint">Al guardar cambios, la OT vuelve a requerir aprobación del cliente.</small>
+      </div>
+    </section>
+
+    <!-- HISTORIAL -->
+    <section id="v-historial" class="vista hidden">
+      <div class="card">
+        <h2>Historial</h2>
+        <div class="filtros">
+          <input id="h-buscar" placeholder="Cliente, N°, dominio…" oninput="renderHistorial()">
+          <select id="h-estado" onchange="renderHistorial()">
+            <option value="">Todos los estados</option>
+            <option>recibido</option><option>presupuestado</option><option>aprobado</option>
+            <option>rechazado</option><option>finalizado</option><option>facturado</option><option>cobrado</option>
+          </select>
+          <input id="h-desde" type="date" onchange="renderHistorial()">
+          <input id="h-hasta" type="date" onchange="renderHistorial()">
+        </div>
+        <div id="historial"></div>
+      </div>
+    </section>
+
+    <!-- CLIENTES -->
+    <section id="v-clientes" class="vista hidden">
+      <div class="card">
+        <h2 id="cli-titulo">Clientes</h2>
+        <div id="msg-cli" class="msg"></div>
+        <input type="hidden" id="cli-id">
+        <div class="row">
+          <div><label>Razón social *</label><input id="cli-razon"></div>
+          <div><label>CUIT *</label><input id="cli-cuit" inputmode="numeric"></div>
+        </div>
+        <label>Domicilio (opcional)</label><input id="cli-domicilio">
+        <div class="row">
+          <div><label>N° de contacto *</label><input id="cli-contacto" inputmode="tel" placeholder="Ej: 2615005260"></div>
+          <div><label>Persona de contacto (nombre y apellido) *</label><input id="cli-persona"></div>
+        </div>
+        <button class="btn full" onclick="guardarCliente()">Guardar cliente</button>
+        <button id="cli-cancel" class="btn sec full hidden" onclick="resetCliente()">Cancelar edición</button>
+        <h3>Clientes cargados</h3>
+        <div id="lista-clientes"></div>
+      </div>
+    </section>
+
+    <!-- USUARIOS (solo gerente) -->
+    <section id="v-usuarios" class="vista hidden">
+      <div class="card">
+        <h2>Usuarios</h2>
+        <div id="msg-usr" class="msg"></div>
+        <div class="row">
+          <div><label>Nombre y apellido</label><input id="usr-nombre"></div>
+          <div><label>Email</label><input id="usr-email" type="email"></div>
+        </div>
+        <div class="row">
+          <div><label>Contraseña inicial</label><input id="usr-pass" type="text" placeholder="mínimo 6 caracteres"></div>
+          <div><label>Rol</label><select id="usr-rol"><option value="taller">Responsable de taller</option>
+            <option value="administracion">Responsable de administración</option>
+            <option value="gerente">Gerente</option></select></div>
+        </div>
+        <button class="btn full" onclick="crearUsuario()">Crear usuario</button>
+        <small class="hint">El usuario podrá cambiar su contraseña luego. Vos seguís logueado al crearlo.</small>
+        <h3>Usuarios del sistema</h3>
+        <div id="lista-usuarios"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- ===== Página pública de aprobación ===== -->
+<div id="pagina-aprob" class="aprob hidden"></div>
+
+<script>
+/* ============================================================
+   CONFIG FIREBASE — pegá la config de tu proyecto acá
+   ============================================================ */
+const firebaseConfig = {
+  apiKey: "AIzaSyCuPzf7PfzQH_XgNwjr5A9H-HP_oYaBlqA",
+  authDomain: "taller-ct.firebaseapp.com",
+  projectId: "taller-ct",
+  storageBucket: "taller-ct.firebasestorage.app",
+  messagingSenderId: "600012253142",
+  appId: "1:600012253142:web:576b0469031bc28fbee677"
+};
+/* ============================================================ */
+
+let db, auth, yo=null, clientes=[], ordenes=[], aprobs={}, usuarios=[];
+const ROLES={gerente:"Gerente",taller:"Responsable de taller",administracion:"Responsable de administración"};
+function configOK(){return firebaseConfig.projectId&&firebaseConfig.projectId!=="PEGAR_AQUI";}
+
+/* ---------- utilidades ---------- */
+function $(id){return document.getElementById(id);}
+function fmt(n){return "$"+Math.round(n||0).toLocaleString("es-AR");}
+function num(v){if(v==null)return 0;const s=String(v).replace(/[^\d.,]/g,"").replace(/\./g,"").replace(",",".");const n=parseFloat(s);return isNaN(n)?0:n;}
+function entero(v){const s=String(v==null?"":v).replace(/[^\d]/g,"");return s?parseInt(s,10):0;}
+function ahora(){return Date.now();}
+function fFecha(f){if(!f)return"";const p=f.split("-");return p[2]+"-"+p[1]+"-"+p[0];}
+function fFechaHora(ts){if(!ts)return"";const d=new Date(ts);const p=n=>String(n).padStart(2,"0");return p(d.getDate())+"-"+p(d.getMonth()+1)+"-"+d.getFullYear()+" "+p(d.getHours())+":"+p(d.getMinutes());}
+function hoyISO(){return new Date().toISOString().slice(0,10);}
+function msg(id,t,tipo){const e=$(id);e.textContent=t;e.className="msg "+tipo;if(tipo==="ok")setTimeout(()=>e.className="msg",3000);}
+function token(){return Math.random().toString(36).slice(2)+Math.random().toString(36).slice(2);}
+
+/* ---------- arranque ---------- */
+window.addEventListener('DOMContentLoaded',()=>{
+  if(!configOK()){$('aviso-config').classList.remove('hidden');return;}
+  firebase.initializeApp(firebaseConfig);
+  db=firebase.firestore();auth=firebase.auth();
+
+  const ap=new URLSearchParams(location.search).get('ap');
+  if(ap){renderAprobacion(ap);return;}
+
+  auth.onAuthStateChanged(async user=>{
+    if(!user){$('gate-login').classList.remove('hidden');$('app').classList.add('hidden');return;}
+    const doc=await db.collection('usuarios').doc(user.uid).get();
+    if(!doc.exists||doc.data().activo===false){
+      msg('msg-login','Tu usuario no está habilitado. Consultá con el gerente.','err');
+      await auth.signOut();return;
+    }
+    yo={uid:user.uid,...doc.data()};
+    iniciarApp();
+  });
+});
+
+function login(){
+  const e=$('l-email').value.trim(),p=$('l-pass').value;
+  if(!e||!p){msg('msg-login','Completá email y contraseña.','err');return;}
+  auth.signInWithEmailAndPassword(e,p).catch(err=>msg('msg-login','No pudimos ingresar: '+err.message,'err'));
+}
+function logout(){auth.signOut();location.reload();}
+
+function iniciarApp(){
+  $('gate-login').classList.add('hidden');
+  $('app').classList.remove('hidden');
+  $('u-nombre').textContent=yo.nombre||yo.email;
+  $('u-rol').textContent=ROLES[yo.rol]||yo.rol;
+  construirNav();
+  $('ot-fecha').value=hoyISO();
+  escucharClientes();escucharOrdenes();escucharAprobaciones();
+  if(yo.rol==='gerente')escucharUsuarios();
+  showView('pendientes');
+}
+
+/* ---------- navegación por rol ---------- */
+function construirNav(){
+  const tabs=[{v:'pendientes',t:'Pendientes'}];
+  if(yo.rol==='taller'||yo.rol==='gerente'){
+    tabs.push({v:'recibir',t:'Recibir vehículo'});
+    tabs.push({v:'clientes',t:'Clientes'});
+  }
+  tabs.push({v:'historial',t:'Historial'});
+  if(yo.rol==='gerente')tabs.push({v:'usuarios',t:'Usuarios'});
+  $('nav').innerHTML=tabs.map(x=>'<button data-v="'+x.v+'" onclick="showView(\''+x.v+'\')">'+x.t+'</button>').join("");
+}
+function showView(v){
+  document.querySelectorAll('.vista').forEach(s=>s.classList.add('hidden'));
+  const el=$('v-'+v);if(el)el.classList.remove('hidden');
+  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='pendientes')renderPendientes();
+  if(v==='historial')renderHistorial();
+  if(v==='clientes')renderClientes();
+  if(v==='recibir'&&!$('rec-id').value)resetRecepcion();
+  window.scrollTo(0,0);
+}
+
+/* ---------- clientes ---------- */
+function escucharClientes(){
+  db.collection('clientes').orderBy('razon').onSnapshot(s=>{
+    clientes=s.docs.map(d=>({id:d.id,...d.data()}));
+    renderSelectClientes();renderClientes();
+  });
+}
+function renderSelectClientes(){
+  const sel=$('rec-cliente'),a=sel.value;
+  sel.innerHTML='<option value="">— elegí un cliente —</option>'+clientes.map(c=>'<option value="'+c.id+'">'+c.razon+'</option>').join("");
+  sel.value=a;
+}
+function guardarCliente(){
+  const razon=$('cli-razon').value.trim().toUpperCase();
+  const cuit=$('cli-cuit').value.trim();
+  const contacto=$('cli-contacto').value.trim();
+  const persona=$('cli-persona').value.trim();
+  if(!razon||!cuit||!contacto||!persona){msg('msg-cli','Completá razón social, CUIT, contacto y persona de contacto.','err');return;}
+  const data={razon,cuit,domicilio:$('cli-domicilio').value.trim(),contacto,persona};
+  const id=$('cli-id').value;
+  const p=id?db.collection('clientes').doc(id).update(data):db.collection('clientes').add(data);
+  p.then(()=>{resetCliente();msg('msg-cli','Cliente guardado.','ok');}).catch(e=>msg('msg-cli','Error: '+e.message,'err'));
+}
+function resetCliente(){
+  ['cli-id','cli-razon','cli-cuit','cli-domicilio','cli-contacto','cli-persona'].forEach(i=>$(i).value="");
+  $('cli-titulo').textContent="Clientes";$('cli-cancel').classList.add('hidden');
+}
+function editarCliente(id){
+  const c=clientes.find(x=>x.id===id);if(!c)return;
+  $('cli-id').value=id;$('cli-razon').value=c.razon||"";$('cli-cuit').value=c.cuit||"";
+  $('cli-domicilio').value=c.domicilio||"";$('cli-contacto').value=c.contacto||"";$('cli-persona').value=c.persona||"";
+  $('cli-titulo').textContent="Editar cliente";$('cli-cancel').classList.remove('hidden');showView('clientes');window.scrollTo(0,0);
+}
+function borrarCliente(id){if(confirm("¿Borrar este cliente?"))db.collection('clientes').doc(id).delete();}
+function renderClientes(){
+  const c=$('lista-clientes');if(!c)return;
+  if(!clientes.length){c.innerHTML='<div class="vacio">Todavía no cargaste clientes.</div>';return;}
+  c.innerHTML=clientes.map(x=>'<div class="trab"><div class="top"><div><span class="nro">'+x.razon+'</span><div class="meta">CUIT '+x.cuit+' · '+x.persona+' · '+x.contacto+'</div></div></div><div class="acc"><button class="btn mini sec" onclick="editarCliente(\''+x.id+'\')">Editar</button> <button class="btn mini del" onclick="borrarCliente(\''+x.id+'\')">Borrar</button></div></div>').join("");
+}
+
+/* ---------- recepción ---------- */
+function resetRecepcion(){
+  ['rec-id','rec-vehiculo','rec-dominio','rec-observado'].forEach(i=>$(i).value="");
+  $('rec-cliente').value="";$('rec-titulo').textContent="Recibir vehículo";
+}
+function guardarRecepcion(){
+  const cid=$('rec-cliente').value;
+  if(!cid){msg('msg-rec','Elegí un cliente.','err');return;}
+  const cli=clientes.find(c=>c.id===cid);
+  const dominio=$('rec-dominio').value.trim().toUpperCase();
+  const observado=$('rec-observado').value.trim();
+  if(!dominio){msg('msg-rec','Cargá el dominio.','err');return;}
+  const ev={tipo:'recibido',ts:ahora(),usuario:yo.nombre||yo.email};
+  const data={clienteId:cid,clienteNombre:cli.razon,clienteContacto:cli.contacto,clientePersona:cli.persona,
+    vehiculo:$('rec-vehiculo').value.trim(),dominio,observado,
+    estado:'recibido',nro:'',items:[],total:0,version:0,historial:[ev],
+    recibidoEn:ahora(),creadoEn:ahora()};
+  db.collection('ordenes').add(data).then(()=>{resetRecepcion();msg('msg-rec','Vehículo recibido.','ok');showView('pendientes');})
+    .catch(e=>msg('msg-rec','Error: '+e.message,'err'));
+}
+
+/* ---------- OT / presupuesto ---------- */
+function addItem(desc,uni,cant,pu){
+  desc=desc||"";uni=uni||"Global";cant=(cant==null?"1":cant);pu=(pu==null?"":pu);
+  const d=document.createElement('div');d.className='item';
+  d.innerHTML='<textarea class="desc" placeholder="Descripción" oninput="recalc()">'+desc+'</textarea>'+
+    '<select class="uni" onchange="recalc()">'+['Global','Horas','Unidades'].map(o=>'<option '+(o===uni?'selected':'')+'>'+o+'</option>').join("")+'</select>'+
+    '<input class="cant" inputmode="decimal" value="'+cant+'" oninput="recalc()">'+
+    '<input class="pu" inputmode="numeric" placeholder="$ unit." value="'+pu+'" oninput="recalc()">'+
+    '<div class="tot">$0</div>'+
+    '<button class="x" onclick="this.parentNode.remove();recalc()">✕</button>';
+  $('ot-items').appendChild(d);recalc();
+}
+function leerItems(){
+  return [...document.querySelectorAll('#ot-items .item')].map(r=>{
+    const cant=num(r.querySelector('.cant').value),pu=entero(r.querySelector('.pu').value);
+    return{descripcion:r.querySelector('.desc').value.trim(),unidad:r.querySelector('.uni').value,cantidad:cant,precioUnit:pu,total:Math.round(cant*pu)};
+  }).filter(i=>i.descripcion||i.total);
+}
+function recalc(){
+  let t=0;document.querySelectorAll('#ot-items .item').forEach(r=>{
+    const cant=num(r.querySelector('.cant').value),pu=entero(r.querySelector('.pu').value),st=Math.round(cant*pu);
+    r.querySelector('.tot').textContent=fmt(st);t+=st;});
+  $('ot-total').textContent=fmt(t);
+}
+function abrirOT(id){
+  const o=ordenes.find(x=>x.id===id);if(!o)return;
+  $('ot-id').value=id;
+  $('ot-titulo').textContent=(o.nro?'OT N° '+o.nro:'Nueva OT')+' — '+o.clienteNombre;
+  $('ot-datos').textContent=(o.clienteNombre+' · '+(o.vehiculo||'')+' '+(o.dominio||'')).trim();
+  $('ot-nro').value=o.nro||proponerNro();
+  $('ot-fecha').value=o.fechaOT||hoyISO();
+  $('ot-items').innerHTML="";
+  (o.items||[]).forEach(i=>addItem(i.descripcion,i.unidad,i.cantidad,i.precioUnit));
+  if(!(o.items||[]).length)addItem();
+  showView('ot');
+}
+function proponerNro(){
+  const nums=ordenes.map(o=>parseInt(String(o.nro).replace(/\D/g,''),10)).filter(n=>!isNaN(n));
+  if(!nums.length)return"";
+  return String(Math.max(...nums)+1);
+}
+function guardarOT(){
+  const id=$('ot-id').value;const o=ordenes.find(x=>x.id===id);if(!o)return;
+  const nro=$('ot-nro').value.trim();
+  const items=leerItems();
+  if(!nro){msg('msg-ot','Poné el N° de OT.','err');return;}
+  if(!items.length){msg('msg-ot','Cargá al menos un ítem.','err');return;}
+  if(ordenes.some(x=>x.id!==id&&String(x.nro)===nro)){if(!confirm('Ya existe una OT N° '+nro+'. ¿Guardar igual?'))return;}
+  const total=items.reduce((a,i)=>a+i.total,0);
+  const tk=o.aprobToken||token();
+  const version=(o.version||0)+1;
+  const ev={tipo:o.version?'editado':'presupuestado',ts:ahora(),usuario:yo.nombre||yo.email,detalle:'v'+version};
+  const data={nro,fechaOT:$('ot-fecha').value,items,total,version,aprobToken:tk,estado:'presupuestado',
+    historial:[...(o.historial||[]),ev]};
+  db.collection('ordenes').doc(id).update(data)
+    .then(()=>db.collection('aprobaciones').doc(tk).set({
+      ordenId:id,nro,clienteNombre:o.clienteNombre,vehiculo:o.vehiculo,dominio:o.dominio,
+      items,total,version,estado:'pendiente',comentario:'',respondidoEn:null}))
+    .then(()=>{msg('msg-ot','Presupuesto guardado. Enviá el link al cliente desde Pendientes.','ok');showView('pendientes');})
+    .catch(e=>msg('msg-ot','Error: '+e.message,'err'));
+}
+
+/* ---------- órdenes: escucha + reconciliación ---------- */
+function escucharOrdenes(){
+  db.collection('ordenes').onSnapshot(s=>{
+    ordenes=s.docs.map(d=>({id:d.id,...d.data()}));
+    ordenes.sort((a,b)=>(b.creadoEn||0)-(a.creadoEn||0));
+    reconciliar();renderPendientes();
+    if(!$('v-historial').classList.contains('hidden'))renderHistorial();
+  });
+}
+function escucharAprobaciones(){
+  db.collection('aprobaciones').onSnapshot(s=>{
+    aprobs={};s.docs.forEach(d=>aprobs[d.id]=d.data());
+    reconciliar();renderPendientes();
+  });
+}
+function reconciliar(){
+  if(!yo)return;
+  ordenes.forEach(o=>{
+    if(o.estado==='presupuestado'&&o.aprobToken&&aprobs[o.aprobToken]){
+      const ap=aprobs[o.aprobToken];
+      if(ap.version===o.version&&(ap.estado==='aprobado'||ap.estado==='rechazado')){
+        const ev={tipo:ap.estado,ts:ap.respondidoEn||ahora(),usuario:'Cliente (link)',detalle:ap.comentario||''};
+        db.collection('ordenes').doc(o.id).update({estado:ap.estado,clienteComentario:ap.comentario||'',
+          historial:[...(o.historial||[]),ev]});
+      }
+    }
+  });
+}
+
+/* ---------- acciones de estado ---------- */
+function marcar(id,estado,extra){
+  const o=ordenes.find(x=>x.id===id);if(!o)return;
+  const ev={tipo:estado,ts:ahora(),usuario:yo.nombre||yo.email};
+  db.collection('ordenes').doc(id).update({estado,historial:[...(o.historial||[]),ev],...(extra||{})});
+}
+function aprobarManual(id){if(confirm('Registrar que el cliente APROBÓ el presupuesto (respaldo manual)?'))marcar(id,'aprobado',{clienteComentario:'(aprobado manual)'});}
+function rechazarManual(id){const c=prompt('Comentario del cliente al rechazar:');if(c!==null)marcar(id,'rechazado',{clienteComentario:c||'(rechazado manual)'});}
+function finalizar(id){if(confirm('Marcar el trabajo como FINALIZADO? Pasa a administración para facturar.'))marcar(id,'finalizado');}
+function facturar(id){if(confirm('Marcar como FACTURADO?'))marcar(id,'facturado');}
+function cobrar(id){if(confirm('Marcar como COBRADO? Cierra el trabajo.'))marcar(id,'cobrado');}
+
+/* ---------- pendientes por rol ---------- */
+function renderPendientes(){
+  const c=$('pendientes');if(!c||!yo)return;let lista=[];
+  if(yo.rol==='taller'||yo.rol==='gerente'){
+    lista=ordenes.filter(o=>['recibido','rechazado','presupuestado','aprobado'].includes(o.estado));
+  }else if(yo.rol==='administracion'){
+    lista=ordenes.filter(o=>['aprobado','finalizado'].includes(o.estado));
+  }
+  if(!lista.length){c.innerHTML='<div class="vacio">No hay pendientes. 👍</div>';return;}
+  c.innerHTML=lista.map(o=>tarjeta(o,true)).join("");
+}
+
+/* ---------- historial ---------- */
+function renderHistorial(){
+  const c=$('historial');if(!c)return;
+  const q=($('h-buscar').value||"").toLowerCase();
+  const est=$('h-estado').value,desde=$('h-desde').value,hasta=$('h-hasta').value;
+  let l=ordenes.filter(o=>{
+    if(est&&o.estado!==est)return false;
+    const f=(o.fechaOT||new Date(o.creadoEn).toISOString().slice(0,10));
+    if(desde&&f<desde)return false;if(hasta&&f>hasta)return false;
+    if(q&&![o.nro,o.clienteNombre,o.dominio,o.vehiculo].join(" ").toLowerCase().includes(q))return false;
+    return true;
+  });
+  if(!l.length){c.innerHTML='<div class="vacio">Sin resultados.</div>';return;}
+  c.innerHTML=l.map(o=>tarjeta(o,false)).join("");
+}
+
+/* ---------- tarjeta de trabajo ---------- */
+function tarjeta(o,conAcciones){
+  const puedeTaller=(yo.rol==='taller'||yo.rol==='gerente');
+  const puedeAdmin=(yo.rol==='administracion'||yo.rol==='gerente');
+  let acc="";
+  if(conAcciones){
+    if(o.estado==='recibido'&&puedeTaller)acc+='<button class="btn mini" onclick="abrirOT(\''+o.id+'\')">Generar OT</button> <button class="btn mini sec" onclick="pdfRecepcion(\''+o.id+'\')">PDF recepción</button> <button class="btn mini sol" onclick="waRecepcion(\''+o.id+'\')">WhatsApp</button>';
+    if(o.estado==='presupuestado'&&puedeTaller)acc+='<button class="btn mini sol" onclick="waPresupuesto(\''+o.id+'\')">Enviar por WhatsApp</button> <button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button> <button class="btn mini sec" onclick="copiarLink(\''+o.id+'\')">Copiar link</button> <button class="btn mini sec" onclick="abrirOT(\''+o.id+'\')">Editar</button> <button class="btn mini ok" onclick="aprobarManual(\''+o.id+'\')">Aprobó</button> <button class="btn mini del" onclick="rechazarManual(\''+o.id+'\')">Rechazó</button>';
+    if(o.estado==='rechazado'&&puedeTaller)acc+='<button class="btn mini" onclick="abrirOT(\''+o.id+'\')">Revisar / re-presupuestar</button>';
+    if(o.estado==='aprobado'&&puedeTaller)acc+='<button class="btn mini ok" onclick="finalizar(\''+o.id+'\')">Trabajo finalizado</button> <button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button>';
+    if(o.estado==='finalizado'&&puedeAdmin)acc+='<button class="btn mini warn" onclick="facturar(\''+o.id+'\')">Facturar</button>';
+    if(o.estado==='facturado'&&puedeAdmin)acc+='<button class="btn mini ok" onclick="cobrar(\''+o.id+'\')">Cobrado</button>';
+  }else{
+    acc='<button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button>';
+  }
+  const com=o.clienteComentario?'<div class="meta">💬 Cliente: '+o.clienteComentario+'</div>':"";
+  return '<div class="trab"><div class="top"><div><span class="nro">'+(o.nro?'OT N° '+o.nro:'(sin N°)')+'</span> · '+o.clienteNombre+
+    '<div class="meta">'+(o.vehiculo||'')+' '+(o.dominio||'')+' · recibido '+fFechaHora(o.recibidoEn)+'</div>'+
+    (o.observado?'<div class="meta">🔧 '+o.observado+'</div>':"")+com+'</div>'+
+    '<div style="text-align:right"><span class="badge b-'+o.estado+'">'+o.estado+'</span>'+
+    '<div class="nro" style="margin-top:6px">'+(o.total?fmt(o.total):"")+'</div></div></div>'+
+    '<div class="acc">'+acc+'</div></div>';
+}
+
+/* ---------- WhatsApp ---------- */
+function waNum(c){const d=String(c||"").replace(/\D/g,"");if(!d)return"";return d.length<=10?"549"+d:d;}
+function waRecepcion(id){
+  const o=ordenes.find(x=>x.id===id);
+  const t='Hola '+(o.clientePersona||'')+'! Recibimos el vehículo '+(o.vehiculo||'')+' ('+o.dominio+') el '+fFechaHora(o.recibidoEn)+'.%0AObservado: '+encodeURIComponent(o.observado||'-')+'.%0AEn breve te enviamos el presupuesto. Taller CT Logística.';
+  abrirWA(o.clienteContacto,t);
+}
+function waPresupuesto(id){
+  const o=ordenes.find(x=>x.id===id);
+  const link=location.origin+location.pathname+'?ap='+o.aprobToken;
+  const t='Hola '+(o.clientePersona||'')+'! Te enviamos el presupuesto de la OT N° '+o.nro+' por '+fmt(o.total)+'.%0APodés verlo y aprobarlo o rechazarlo acá:%0A'+encodeURIComponent(link)+'%0AGracias. Taller CT Logística.';
+  abrirWA(o.clienteContacto,t);
+}
+function abrirWA(contacto,texto){const n=waNum(contacto);window.open(n?'https://wa.me/'+n+'?text='+texto:'https://wa.me/?text='+texto,'_blank');}
+function copiarLink(id){const o=ordenes.find(x=>x.id===id);const link=location.origin+location.pathname+'?ap='+o.aprobToken;
+  if(navigator.clipboard)navigator.clipboard.writeText(link).then(()=>alert('Link copiado:\n'+link),()=>prompt('Copiá el link:',link));else prompt('Copiá el link:',link);}
+
+/* ---------- PDFs ---------- */
+function encabezadoPDF(doc,titulo,nro,fecha){
+  doc.setFontSize(18);doc.setTextColor(14,92,99);doc.text("CT LOGISTICA SA",14,18);
+  doc.setFontSize(8);doc.setTextColor(80);
+  doc.text("Tel: 2617067267 / 2615005260   CUIT: 30/71639600-9",14,24);
+  doc.text("Rodriguez Peña 3050 - Maipú - CP 5513",14,29);
+  doc.setFontSize(13);doc.setTextColor(20);doc.text(titulo,14,40);
+  doc.setFontSize(10);
+  if(nro)doc.text("N°: "+nro,150,18);
+  doc.text("Fecha: "+fecha,150,24);
+  doc.setDrawColor(200);doc.line(14,43,196,43);
+}
+function pdfRecepcion(id){
+  const o=ordenes.find(x=>x.id===id);const jsPDF=window.jspdf.jsPDF;const doc=new jsPDF();
+  encabezadoPDF(doc,"FICHA DE RECEPCIÓN DE VEHÍCULO","",fFechaHora(o.recibidoEn));
+  let y=52;doc.setFontSize(11);doc.setTextColor(20);
+  const linea=(k,v)=>{doc.setFont(undefined,'bold');doc.text(k,14,y);doc.setFont(undefined,'normal');doc.text(String(v||'-'),60,y);y+=8;};
+  linea("Cliente:",o.clienteNombre);linea("Contacto:",(o.clientePersona||'')+" - "+(o.clienteContacto||''));
+  linea("Vehículo:",o.vehiculo);linea("Dominio:",o.dominio);linea("Recepción:",fFechaHora(o.recibidoEn));
+  y+=2;doc.setFont(undefined,'bold');doc.text("Problemas manifestados por el cliente:",14,y);y+=7;
+  doc.setFont(undefined,'normal');doc.text(doc.splitTextToSize(o.observado||'-',180),14,y);
+  y+=40;doc.line(14,y,90,y);doc.text("Firma recepción",14,y+5);
+  doc.save("Recepcion_"+o.dominio+".pdf");
+}
+function pdfOT(id){
+  const o=ordenes.find(x=>x.id===id);const jsPDF=window.jspdf.jsPDF;const doc=new jsPDF();
+  encabezadoPDF(doc,"ORDEN DE TRABAJO / PRESUPUESTO","N° "+o.nro,fFecha(o.fechaOT||''));
+  let y=52;doc.setFontSize(11);
+  doc.setFont(undefined,'bold');doc.text("Cliente:",14,y);doc.setFont(undefined,'normal');doc.text(o.clienteNombre||'-',40,y);y+=7;
+  doc.setFont(undefined,'bold');doc.text("Vehículo:",14,y);doc.setFont(undefined,'normal');doc.text((o.vehiculo||'')+" "+(o.dominio||''),40,y);y+=6;
+  doc.autoTable({startY:y+2,head:[['Descripción','Unidad','Cant.','P. unit.','Total']],
+    body:(o.items||[]).map(i=>[i.descripcion,i.unidad,i.cantidad,fmt(i.precioUnit),fmt(i.total)]),
+    styles:{fontSize:9},headStyles:{fillColor:[14,92,99]},columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}}});
+  let fy=doc.lastAutoTable.finalY+8;
+  doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text("TOTAL: "+fmt(o.total),150,fy);
+  doc.save("OT_"+o.nro+"_"+o.clienteNombre+".pdf");
+}
+
+/* ---------- usuarios (gerente) ---------- */
+function escucharUsuarios(){
+  db.collection('usuarios').onSnapshot(s=>{usuarios=s.docs.map(d=>({uid:d.id,...d.data()}));renderUsuarios();});
+}
+function crearUsuario(){
+  const nombre=$('usr-nombre').value.trim(),email=$('usr-email').value.trim(),pass=$('usr-pass').value,rol=$('usr-rol').value;
+  if(!nombre||!email||pass.length<6){msg('msg-usr','Completá nombre, email y contraseña (mín. 6).','err');return;}
+  const sec=firebase.initializeApp(firebaseConfig,'sec'+Date.now());
+  sec.auth().createUserWithEmailAndPassword(email,pass)
+    .then(cred=>db.collection('usuarios').doc(cred.user.uid).set({nombre,email,rol,activo:true,creadoPor:yo.nombre||yo.email,creadoEn:ahora()}))
+    .then(()=>sec.auth().signOut()).then(()=>sec.delete())
+    .then(()=>{['usr-nombre','usr-email','usr-pass'].forEach(i=>$(i).value="");msg('msg-usr','Usuario creado.','ok');})
+    .catch(e=>{msg('msg-usr','Error: '+e.message,'err');sec.delete().catch(()=>{});});
+}
+function toggleUsuario(uid,activo){db.collection('usuarios').doc(uid).update({activo:!activo});}
+function renderUsuarios(){
+  const c=$('lista-usuarios');if(!c)return;
+  c.innerHTML=usuarios.map(u=>'<div class="trab"><div class="top"><div><span class="nro">'+u.nombre+'</span><div class="meta">'+u.email+' · '+(ROLES[u.rol]||u.rol)+' · '+(u.activo===false?'INACTIVO':'activo')+'</div></div>'+
+    (u.uid!==yo.uid?'<button class="btn mini '+(u.activo===false?'ok':'del')+'" onclick="toggleUsuario(\''+u.uid+'\','+(u.activo!==false)+')">'+(u.activo===false?'Reactivar':'Desactivar')+'</button>':'')+
+    '</div></div>').join("");
+}
+
+/* ============================================================
+   PÁGINA PÚBLICA DE APROBACIÓN (sin login)
+   ============================================================ */
+async function renderAprobacion(tk){
+  const cont=$('pagina-aprob');cont.classList.remove('hidden');
+  cont.innerHTML='<div class="doc">Cargando presupuesto…</div>';
+  try{
+    const snap=await db.collection('aprobaciones').doc(tk).get();
+    if(!snap.exists){cont.innerHTML='<div class="doc">Este presupuesto no existe o venció.</div>';return;}
+    pintarAprob(cont,tk,snap.data());
+  }catch(e){cont.innerHTML='<div class="doc">No pudimos cargar el presupuesto. '+e.message+'</div>';}
+}
+function pintarAprob(cont,tk,a){
+  if(a.estado==='aprobado'){cont.innerHTML='<div class="doc"><h2>Presupuesto N° '+a.nro+'</h2><p style="color:var(--ok)"><b>✔ Ya aprobaste este presupuesto.</b> Gracias.</p></div>';return;}
+  if(a.estado==='rechazado'){cont.innerHTML='<div class="doc"><h2>Presupuesto N° '+a.nro+'</h2><p style="color:var(--danger)"><b>Este presupuesto fue rechazado.</b> El taller se va a comunicar con vos.</p></div>';return;}
+  const filas=(a.items||[]).map(i=>'<tr><td class="l">'+i.descripcion+'</td><td>'+i.unidad+'</td><td>'+i.cantidad+'</td><td>'+fmt(i.precioUnit)+'</td><td>'+fmt(i.total)+'</td></tr>').join("");
+  cont.innerHTML='<div class="doc">'+
+    '<h2 style="color:var(--agua)">CT Logística — Presupuesto N° '+a.nro+'</h2>'+
+    '<div class="meta" style="color:var(--muted)">'+(a.vehiculo||'')+' '+(a.dominio||'')+'</div>'+
+    '<table class="mini"><tr><th>Descripción</th><th>Unidad</th><th>Cant.</th><th>P. unit.</th><th>Total</th></tr>'+filas+'</table>'+
+    '<div class="total"><span>TOTAL</span><span>'+fmt(a.total)+'</span></div>'+
+    '<p style="font-size:13px;color:var(--muted)">Revisá el presupuesto y elegí una opción:</p>'+
+    '<button class="btn ok full" onclick="respAprob(\''+tk+'\',\'aprobado\')">✔ Aprobar presupuesto</button>'+
+    '<button class="btn del full" onclick="pedirRechazo()">Rechazar / tengo dudas</button>'+
+    '<div id="rech-box" class="hidden" style="margin-top:12px"><label>Contanos qué querés cambiar o por qué:</label>'+
+    '<textarea id="rech-com"></textarea>'+
+    '<button class="btn del full" onclick="respAprob(\''+tk+'\',\'rechazado\')">Enviar rechazo</button></div>'+
+    '<div id="ap-msg" class="msg" style="margin-top:12px"></div></div>';
+}
+function pedirRechazo(){$('rech-box').classList.remove('hidden');}
+function respAprob(tk,estado){
+  const com=estado==='rechazado'?($('rech-com').value.trim()):'';
+  if(estado==='rechazado'&&!com){$('ap-msg').className='msg err';$('ap-msg').textContent='Escribí un comentario para el rechazo.';return;}
+  db.collection('aprobaciones').doc(tk).update({estado,comentario:com,respondidoEn:ahora()})
+    .then(()=>{$('pagina-aprob').innerHTML='<div class="doc"><h2 style="color:var(--agua)">¡Listo!</h2><p>'+(estado==='aprobado'?'Aprobaste el presupuesto. El taller ya puede comenzar. ¡Gracias!':'Registramos tu rechazo. El taller se va a comunicar con vos.')+'</p></div>';})
+    .catch(e=>{$('ap-msg').className='msg err';$('ap-msg').textContent='Error: '+e.message;});
+}
+</script>
+</body>
+</html>
