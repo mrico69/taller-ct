@@ -589,7 +589,15 @@ function pdfOT(id){
     body:(o.items||[]).map(i=>[i.descripcion,i.unidad,i.cantidad,fmt(i.precioUnit),fmt(i.total)]),
     styles:{fontSize:9},headStyles:{fillColor:[14,92,99]},columnStyles:{2:{halign:'right'},3:{halign:'right'},4:{halign:'right'}}});
   let fy=doc.lastAutoTable.finalY+8;
-  doc.setFontSize(13);doc.setFont(undefined,'bold');doc.text("TOTAL: "+fmt(o.total),150,fy);
+  doc.setFontSize(13);doc.setFont(undefined,'bold');doc.setTextColor(20);doc.text("TOTAL: "+fmt(o.total),150,fy);
+  var LT={recibido:'Vehículo recibido',presupuestado:'Presupuesto generado',editado:'OT editada (nueva versión)',aprobado:'Aprobado por el cliente',rechazado:'Rechazado por el cliente',finalizado:'Trabajo finalizado',facturado:'Facturado',cobrado:'Cobrado'};
+  var hist=(o.historial||[]).map(function(ev){return [fFechaHora(ev.ts),LT[ev.tipo]||ev.tipo,ev.usuario||'',ev.detalle||''];});
+  if(hist.length){
+    doc.setFontSize(11);doc.setFont(undefined,'bold');doc.setTextColor(14,92,99);
+    doc.text("Trazabilidad del trabajo",14,fy+16);
+    doc.autoTable({startY:fy+20,head:[['Fecha y hora','Paso','Usuario','Detalle']],body:hist,
+      styles:{fontSize:8},headStyles:{fillColor:[107,118,131]}});
+  }
   doc.save("OT_"+o.nro+"_"+o.clienteNombre+".pdf");
 }
 
