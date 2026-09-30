@@ -323,7 +323,8 @@ function construirNav(){
     tabs.push({v:'clientes',t:'Clientes'});
   }
   tabs.push({v:'historial',t:'Historial'});
-  if(yo.rol==='gerente'){tabs.push({v:'usuarios',t:'Usuarios'});tabs.push({v:'papelera',t:'Papelera'});}
+  if(yo.rol==='gerente'){tabs.push({v:'usuarios',t:'Usuarios'});}
+  if(yo.rol==='gerente'||yo.rol==='taller')tabs.push({v:'papelera',t:'Papelera'});
   $('nav').innerHTML=tabs.map(x=>'<button data-v="'+x.v+'" onclick="showView(\''+x.v+'\')">'+x.t+'</button>').join("");
 }
 function showView(v){
@@ -637,6 +638,8 @@ function tarjeta(o,conAcciones){
       acc+=' <button class="btn mini sec" onclick="abrirCierre(\''+o.id+'\')">Editar cierre</button>';
     acc+=' <button class="btn mini del" onclick="borrarOrden(\''+o.id+'\')">Borrar</button>';
   }
+  if(yo.rol==='taller')
+    acc+=' <button class="btn mini del" onclick="borrarOrden(\''+o.id+'\')">Borrar</button>';
   const com=o.clienteComentario?'<div class="meta">💬 Cliente: '+o.clienteComentario+'</div>':"";
   // Mostrar datos del cierre si existen
   let cierreHtml="";
