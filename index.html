@@ -623,7 +623,7 @@ function tarjeta(o,conAcciones){
     if(o.estado==='presupuestado'&&puedeTaller)acc+='<button class="btn mini sol" onclick="waPresupuesto(\''+o.id+'\')">Enviar por WhatsApp</button> <button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button> <button class="btn mini sec" onclick="copiarLink(\''+o.id+'\')">Copiar link</button> <button class="btn mini sec" onclick="abrirOT(\''+o.id+'\')">Editar</button> <button class="btn mini ok" onclick="aprobarManual(\''+o.id+'\')">Aprobó</button> <button class="btn mini del" onclick="rechazarManual(\''+o.id+'\')">Rechazó</button>';
     if(o.estado==='rechazado'&&puedeTaller)acc+='<button class="btn mini" onclick="abrirOT(\''+o.id+'\')">Revisar / re-presupuestar</button>';
     // ← CAMBIO CLAVE: "Trabajo finalizado" ahora abre el modal de cierre
-    if(o.estado==='aprobado'&&puedeTaller)acc+='<button class="btn mini ok" onclick="abrirCierre(\''+o.id+'\')">Trabajo finalizado</button> <button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button>';
+    if(o.estado==='aprobado'&&puedeTaller)acc+='<button class="btn mini sec" onclick="abrirOT(\''+o.id+'\')">Editar OT</button> <button class="btn mini ok" onclick="abrirCierre(\''+o.id+'\')">Trabajo finalizado</button> <button class="btn mini sec" onclick="pdfOT(\''+o.id+'\')">PDF</button>';
     if(o.estado==='finalizado'&&puedeAdmin)acc+='<button class="btn mini warn" onclick="facturar(\''+o.id+'\')">Facturar</button>';
     if(o.estado==='facturado'&&puedeAdmin)acc+='<button class="btn mini ok" onclick="cobrar(\''+o.id+'\')">Cobrado</button>';
   }else{
